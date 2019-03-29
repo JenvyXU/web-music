@@ -40,7 +40,10 @@ body {
 }
 
 .singer-pic>img {
+  display: block;
   border: 7px solid #e8e8e9;
+  width: 270px;
+  height: 270px;
 }
 
 .music-pannel {
