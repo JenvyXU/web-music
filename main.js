@@ -10,61 +10,46 @@ getMusicList(function (list) {
   loadMusic(list[currentIndex]) //蒋即将播放的音乐的信息展示到页面上
 })
 
-function loadMusic(musicObj) {
-  $('.bar-title>.title>:nth-child(1)').innerText = musicObj.title
-  $('.bar-title>.title>:nth-child(2)').innerText = '-' + musicObj.author
-  $('.singer-pic>img').setAttribute('src', musicObj.cover)
-  $('.progress>img').setAttribute('src', musicObj.cover)
-  $('.play-list>ul>li:nth-child(' + (currentIndex + 1) + ')').classList.add('active') // :nth-child()从1开始 1,2,3,4
-  audio.src = musicObj.src
-}
-
-function generateList(list) {
-  var songList = document.createDocumentFragment()
-  list.forEach((song, index) => {
-    var tpl = `
-    <img src="${song.cover}" alt="" width="36px" height="36px">
-    <div class="song-message">
-      <div class="title-wrapper"><span class="title">${song.title}</div>
-      <div class="auther-wrapper"><span class="author">${song.author}</span><span class="time">${song.duration}</span></div>
-    </div>`
-    var songLi = document.createElement('li')
-    // if(index===currentIndex){
-    //   songLi.classList.add('active')
-    // }
-    songLi.setAttribute('data-index', index)
-    songLi.innerHTML = tpl
-    songList.appendChild(songLi)
-  })
-  $('.play-list>ul').appendChild(songList)
-  $('.play-list>p span').innerText = list.length
-}
-
-function isPlaying() {
-  if (audio.paused) {
-    $('.play-btn').classList.add('active')
-    $('.pause-btn').classList.remove('active')
-  } else {
-    $('.pause-btn').classList.add('active')
-    $('.play-btn').classList.remove('active')
-  }
-}
-
 
 
 audio.onpause = function () {
   clearInterval(clock)
 }
-
 audio.onended = function () {
-  currentIndex = (++currentIndex) % musicList.length
+  $('.play-list>ul>li:nth-child(' + (currentIndex + 1) + ')').classList.remove('active')
+  if (currentIndex < musicList.length - 1) { //最后一首结束重新播放播放第一首0,1,2,3 
+    currentIndex += 1
+  } else {
+    currentIndex = 0
+  }
+
   setTimeout(() => {
-    $('.play-list>ul>li:nth-child(' + (currentIndex) + ')').classList.remove('active')
     loadMusic(musicList[currentIndex])
     audio.play()
   }, 1000);
 }
+audio.onloadedmetadata = function () {//加载完后设置音乐的长度
+  var totalMin = Math.floor(this.duration / 60) + ''
+  var totalSec = Math.floor(this.duration) % 60 + ''
+  var currentLi = currentIndex + 1
+  totalMin = totalMin.length === 2 ? totalMin : '0' + totalMin
+  totalSec = totalSec.length === 2 ? totalSec : '0' + totalSec
+  $('.play-time>:nth-child(2)').innerText = totalMin + ':' + totalSec
+}
+audio.onplaying = function () {
+  isPlaying()
+}
+audio.ontimeupdate = function () {
 
+  var playMin = Math.floor(this.currentTime / 60) + ''
+  var playSec = Math.floor(this.currentTime) % 60 + ''
+  playMin = playMin.length === 2 ? playMin : '0' + playMin
+  playSec = playSec.length === 2 ? playSec : '0' + playSec
+
+  $('.bar>.bar-progress').style.width = (this.currentTime / this.duration) * 100 + '%'
+  $('.play-time>:nth-child(1)').innerText = playMin + ':' + playSec
+
+}
 $('.control .play').onclick = function () {
   if (audio.paused) {
     audio.play()
@@ -109,7 +94,7 @@ $('.play-list>ul').addEventListener('click', function (e) {
       fatherNode = fatherNode.parentNode
     }
   }
-  index = fatherNode.getAttribute('data-index')
+  index = parseInt(fatherNode.getAttribute('data-index'))
   for (var key in fatherNode.parentNode.children) {
     if (fatherNode.parentNode.children[key].className === 'active') {
       fatherNode.parentNode.children[key].classList.remove('active')
@@ -119,6 +104,7 @@ $('.play-list>ul').addEventListener('click', function (e) {
   currentIndex = index
   loadMusic(musicList[currentIndex])
   audio.play()
+
 }, false)
 
 
@@ -143,21 +129,44 @@ function getMusicList(callback) {
 }
 
 
-audio.ontimeupdate = function () {
-  var playMin = Math.floor(this.currentTime / 60) + ''
-  var playSec = Math.floor(this.currentTime) % 60 + ''
-  playMin = playMin.length === 2 ? playMin : '0' + playMin
-  playSec = playSec.length === 2 ? playSec : '0' + playSec
-  var totalMin = Math.floor(this.duration / 60) + ''
-  var totalSec = Math.floor(this.duration) % 60 + ''
-  totalMin = totalMin.length === 2 ? totalMin : '0' + totalMin
-  totalSec = totalSec.length === 2 ? totalSec : '0' + totalSec
-  if (this.duration === 0)
-  $('.bar>.bar-progress').style.width = (this.currentTime / this.duration) * 100 + '%'
-  $('.play-time>:nth-child(1)').innerText = playMin + ':' + playSec
-  $('.play-time>:nth-child(2)').innerText = totalMin + ':' + totalSec
+function loadMusic(musicObj) {
+
+  $('.bar-title>.title>:nth-child(1)').innerText = musicObj.title
+  $('.bar-title>.title>:nth-child(2)').innerText = '-' + musicObj.author
+  $('.singer-pic>img').setAttribute('src', musicObj.cover)
+  $('.progress>img').setAttribute('src', musicObj.cover)
+  $('.play-list>ul>li:nth-child(' + (currentIndex + 1) + ')').classList.add('active')
+  audio.src = musicObj.src
+
+} 
+
+function generateList(list) {
+  var songList = document.createDocumentFragment()
+  list.forEach((song, index) => {
+    var tpl = `
+    <img src="${song.cover}" alt="" width="36px" height="36px">
+    <div class="song-message">
+      <div class="title-wrapper"><span class="title">${song.title}</div>
+      <div class="auther-wrapper"><span class="author">${song.author}</span><span class="time">${song.duration}</span></div>
+    </div>`
+    var songLi = document.createElement('li')
+    songLi.setAttribute('data-index', index)
+    songLi.innerHTML = tpl
+    songList.appendChild(songLi)
+  })
+  $('.play-list>ul').appendChild(songList)
+  $('.play-list>p span').innerText = list.length
 }
 
+function isPlaying() {
+  if (audio.paused) {
+    $('.play-btn').classList.add('active')
+    $('.pause-btn').classList.remove('active')
+  } else {
+    $('.pause-btn').classList.add('active')
+    $('.play-btn').classList.remove('active')
+  }
+}
 // audio.onplay=function(){
 //   console.log(this.currentTime)
 //   clock=setInterval(()=>{
