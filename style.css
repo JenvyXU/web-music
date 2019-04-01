@@ -84,6 +84,7 @@ body {
   align-items: center;
   padding: 12px;
   border-bottom: 1px solid #F8F8F7;
+  transition: all .2s;
 }
 
 .play-list>ul>li.active {
